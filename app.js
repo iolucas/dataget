@@ -29,75 +29,13 @@ app.get('/getpage', function (req, res) {
 
     res.charset = 'utf-8';
 
-    var pageUrl = req.query.pageurl;
+    var pageUrl = req.query.pageurl;    
 
-    getPageAndFormat(pageUrl, function(htmlData) {
-
-        res.send(htmlData);
-
-    });
-
-    return;
-
-    
-
+    //Check if a url as been passed
     if(pageUrl) {
-        httpGet(pageUrl, function(error, htmlData) {
+        getPageAndFormat(pageUrl, function(htmlData) {
 
-            //var urlData = urlParser.parse(pageUrl);
-
-            res.send(formatWebPage(htmlData, pageUrl));
-
-            //Append native links the host url
-            /*htmlData = addUrlsHost(htmlData, '//' + urlData.host);
-
-            //Load it on cheerio (jQuery like module)
-            $ = cheerio.load(htmlData);
-
-            //Remove all scripts
-            $("script").remove();
-
-            //Wrap any floating text to a <span> tag
-            $("p, div").contents()
-                .filter(function() {
-                    return this.nodeType === 3;
-                })
-                .wrap( "<span wrapped-text></span>" );*/
-
-/*
-            console.log($("#bolsas").contents().filter(function() { 
-                return this.nodeType == 3; 
-            }).each(function() {
-                console.log(arguments);
-            }));//[0].nodeValue = "The text you want to replace with" 
-*/
-
-            //Add selectable to every class
-            /*$("*").addClass('dataget-selectable');
-
-            //Remove the class from the undesired elements
-            $("html").removeClass('dataget-selectable');
-
-            $("head").removeClass('dataget-selectable');
-            $("title").removeClass('dataget-selectable'); 
-            $("base").removeClass('dataget-selectable');
-            $("link").removeClass('dataget-selectable');
-            $("meta").removeClass('dataget-selectable');
-            $("style").removeClass('dataget-selectable');
-
-            $("link").removeClass('dataget-selectable');
-            $("noscript").removeClass('dataget-selectable');
-            $("script").removeClass('dataget-selectable');
-            $("template").removeClass('dataget-selectable');
-
-            $("body").removeClass('dataget-selectable')
-                .append('<script src="jquery-3.1.0.js"></script>')
-                .append('<script src="dataget_script.js"></script>');
-
-            $("head").append('<link href="dataget_style.css" type=text/css rel=stylesheet>');
-            $("head").append('<link href="dataget_style.css" type=text/css rel=stylesheet>');
-
-            res.send($.html());*/
+            res.send(htmlData);
 
         });
 
@@ -146,7 +84,7 @@ app.listen(3000, function () {
 
 function getPageAndFormat(pageUrl, callback) {
     httpGet(pageUrl, function(error, htmlData) {
-        htmlData = htmlData.replace(new RegExp("\n|\r|\t", "ig"), "");
+        
         //console.log(htmlData.indexOf("\n"));
         //htmlData.replace(/\\n/ig, "");
         callback(formatWebPage(htmlData, pageUrl))
@@ -165,7 +103,6 @@ function getValueByInstruction(instruction, $) {
 
     //If the first element is an id, set it as the parentElement and remove it from the list
     if(instructionStack[0].indexOf("#") == 0) {
-        console.log("LUCAS");
         parentElement = $(instructionStack.shift());
     } else { //if no id is present, set the parent as the document
         //(for now get the html element and remove the first element of instruction queue)
@@ -173,9 +110,6 @@ function getValueByInstruction(instruction, $) {
         instructionStack.shift();
     }
 
-    //console.log(instructionStack);
-
-    //console.log(parentElement);
 
     while(instructionStack.length > 0) {
 
@@ -185,37 +119,27 @@ function getValueByInstruction(instruction, $) {
         var tagName = currInstruction[0];
         var tagIndex = currInstruction[1];
 
-        console.log(currInstruction);
-
-        /*parentElement.children().each(function(i, rawElem) {
-            console.log(rawElem);
-        });*/
+        //console.log(currInstruction);
 
         //console.log(parentElement.children(tagName));
         parentElement.children(tagName).each(function(i, rawElem) {
-            console.log(i + " " + tagIndex);
+            //console.log(i + " " + tagIndex);
             
             //If the current index is not the tag index, continue the iteration
             if(i != tagIndex)
                 return;
 
-            console.log(rawElem);
-
-            console.log("Right is above");
-
-            //console.log(currInstruction);
-
             //Update the parent element with the current element
             parentElement = $(rawElem);
         });
-                //console.log(parentElement.text());
+
     }
 
     console.log(parentElement.prop("tagName"));
     console.log(parentElement.text().substr(0,30));
 
     //Get the text of the last parent element
-    return parentElement.html();
+    return parentElement.text();
 }
 
 
@@ -223,10 +147,28 @@ function getValueByInstruction(instruction, $) {
 //Function to format webpage to match dataget requirements
 function formatWebPage(htmlData, pageUrl) {
 
+    //Do this first part to ensure the document is in the right html format
+
     //Remove every html tag from the page to ensure there is only one html tag
-    /*htmlData = htmlData.replace(new RegExp("<html>", "ig"), "");
+    htmlData = htmlData.replace(new RegExp("<html>", "ig"), "");
     htmlData = htmlData.replace(new RegExp("</html>", "ig"), "");
-    htmlData = "<!DOCTYPE html><html>" + htmlData + "</html>";*/
+    //Remove end body tags too
+    htmlData = htmlData.replace(new RegExp("</body>", "ig"), "");
+
+    htmlData = "<!DOCTYPE html><html>" + htmlData + "</body></html>";
+
+    //Remove all line skip special chars
+    htmlData = htmlData.replace(new RegExp("\n|\r|\t", "ig"), "");
+
+    //Keep only the first <body>, replace the rest with ""
+    var notFirstBodyFlag = false;
+    htmlData = htmlData.replace(/<body>/ig, function(match, index) {
+        if(notFirstBodyFlag)
+            return "";
+        
+        notFirstBodyFlag = true;
+        return "<body>";
+    });
 
     //Get url data such as host, path etc
     var urlData = urlParser.parse(pageUrl);

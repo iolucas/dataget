@@ -26,7 +26,6 @@ window.onload = function() {
 
             var targetValue = $(this).text();
 
-            //console.log(targetValue);
 
             //Get the nearest element with an id
 
@@ -132,20 +131,13 @@ window.onload = function() {
             return false;
         });
 
-    /*var selectables = document.getElementsByClassName("dataget-selectable");
-    console.log(selectables);
-    for (var i = 0; i < selectables.length; i++) {
-        var selectable = selectables[i];
-        selectable.onclick = onClick;
-    }*/
-
     console.log("Dataget loaded.");
 }
 
 function getValueByInstruction(instruction) {
     var instructionStack = instruction.split(";");
 
-    var parentElement;// = $(document);
+    var parentElement;
 
     //If the first element is an id, set it as the parentElement and remove it from the list
     if(instructionStack[0].indexOf("#") == 0) {
@@ -162,8 +154,6 @@ function getValueByInstruction(instruction) {
         var tagName = currInstruction[0];
         var tagIndex = currInstruction[1];
 
-        //console.log(currInstruction);
-
         parentElement.children(tagName).each(function(i, rawElem) {
             
             //If the current index is not the tag index, continue the iteration
@@ -178,24 +168,3 @@ function getValueByInstruction(instruction) {
     //Get the text of the last parent element
     return parentElement.text();
 }
-
-/*function onClick(event) {
-    //Prevent parent elements to be triggered click event
-    event.cancelBubble = true;
-
-    console.log(event);
-    console.log(this);
-    return false;
-}
-
-function onMouseOver(event) {
-    //Prevent parent elements to be triggered event
-    event.cancelBubble = true; 
-    console.log(event);
-}
-
-function onMouseLeave(event) {
-    //Prevent parent elements to be triggered event
-    event.cancelBubble = true; 
-    console.log(event);
-}*/
