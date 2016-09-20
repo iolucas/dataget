@@ -21,9 +21,9 @@ module.exports = {
                     //networkRequest.abort(); 
                     
                     var match = requestData.url.match(new RegExp(".*\.(jpg|jpeg|gif|png|bmp)", "ig"));
-                    console.log(match);
+                    //console.log(match);
                     if (match != null) {
-                        console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
+                        //console.log('Request (#' + requestData.id + '): ' + JSON.stringify(requestData));
                         networkRequest.abort(); 
                     }
                 });

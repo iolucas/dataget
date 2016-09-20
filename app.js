@@ -17,6 +17,8 @@ var cheerio = require('cheerio');
 
 var renderpage = require("./renderpage.js");
 
+var dbconnection = require("./dbmodule.js");
+
 // cfenv provides access to your Cloud Foundry environment
 // for more info, see: https://www.npmjs.com/package/cfenv
 var cfenv = require('cfenv');
@@ -28,13 +30,13 @@ var fs = require("fs");
 var appEnv = cfenv.getAppEnv();
 
 //Utils
-String.prototype.replaceAll = function(search, replacement) {
+/*String.prototype.replaceAll = function(search, replacement) {
     var target = this;
     return target.replace(new RegExp(search, 'g'), replacement);
-};
+};*/
 
 
-var storedPages = [];
+//var storedPages = [];
 
 
 app.use(bodyParser.json()); // for parsing application/json
@@ -66,13 +68,27 @@ app.get('/getpage', function (req, res) {
 
 app.get("/:pageId", function(req, res) {
 
-    var pageData = storedPages[req.params.pageId];
+    if(req.params.pageId == "favicon.ico") {
+        // HTTP status 404: NotFound
+        res.status(404).send('Not found');
+        return;
+    }
+
+    //var pageData = storedPages[req.params.pageId];
 
     //var pageFormat = req.query.format || "text";
     //console.log(pageFormat);
 
-    if(pageData) {
-        
+    dbconnection.get(req.params.pageId, function(err, pageData) {
+
+        if(err || pageData == null) {
+            console.log(err);
+            res.status(404).send('Page Not found');
+            return;
+        }
+        //console.log(req.params.pageId);
+        //console.log(arguments);
+
         //Get page html data already formatted
         getPageAndFormat(pageData.pageUrl, function(htmlData) {
 
@@ -88,9 +104,10 @@ app.get("/:pageId", function(req, res) {
             //console.log(returnValuesArray.substr(0, 100));
             res.json(returnValuesArray);
         });
-    } else {
-        res.send("Page Not Found");
-    }    
+
+
+    });
+  
 });
 
 function randomString(length, chars) {
@@ -103,26 +120,56 @@ function randomString(length, chars) {
 app.post('/setpage', function(req, res) {
     var newPageId = randomString(10, '0123456789abcdefghijklmnopqrstuvwxyz');
 
-    //TODO: Must filter data received on post
-    storedPages[newPageId] = req.body;
+    dbconnection.insert({
+        path: newPageId,
+        pageUrl: req.body.pageUrl,
+        instructions: req.body.instructions
+    }, function(err) {
+        if(err) {
+            console.log(err);
+            res.json(err);
+            return;
+        }
 
-    //var pageNum = storedPages.length - 1;
+        //TODO: Must filter data received on post
+        //storedPages[newPageId] = req.body;
 
-    var setPageHtml = fs.readFileSync("public/setpage.html", 'utf8');
+        //var pageNum = storedPages.length - 1;
 
-    //Replace with address
-    setPageHtml = setPageHtml.replace(new RegExp("<!-- NEW-PAGE-ADDRESS -->", "g"), newPageId);
+        var setPageHtml = fs.readFileSync("public/setpage.html", 'utf8');
 
-    res.send(setPageHtml);
+        //Replace with address
+        setPageHtml = setPageHtml.replace(new RegExp("<!-- NEW-PAGE-ADDRESS -->", "g"), newPageId);
+
+        res.send(setPageHtml);
+
+
+    });
+
+
+
 
     //res.send("Done. Page number: " + pageNum);
 });
 
-// start server on the specified port and binding host
-app.listen(appEnv.port, '0.0.0.0', function() {
-  // print a message when the server starts listening
-  console.log("server starting on " + appEnv.url);
+
+dbconnection.init(function(err) {
+
+    if(err) {
+        console.log(err);
+        return;
+    }
+
+    // start server on the specified port and binding host
+    app.listen(appEnv.port, '0.0.0.0', function() {
+        // print a message when the server starts listening
+        console.log("server starting on " + appEnv.url);
+    });
+
+
 });
+
+
 
 
 
@@ -147,7 +194,7 @@ function getValueByInstruction(instruction, $, format) {
     //if(htmlData)
         //var $ = cheerio.load(htmlData);
 
-    console.log(instruction);
+    //console.log(instruction);
     var instructionStack = instruction.split(";");
 
     var parentElement;// = $(document);
@@ -186,8 +233,8 @@ function getValueByInstruction(instruction, $, format) {
 
     }
 
-    console.log(parentElement.prop("tagName"));
-    console.log(parentElement.text().substr(0,30));
+    //console.log(parentElement.prop("tagName"));
+    //console.log(parentElement.text().substr(0,30));
 
     //Get the content of the last parent element according to the specified format
     format = format || "";
@@ -210,7 +257,7 @@ function formatWebPage(htmlData, pageUrl) {
 
     //Remove any additional !doctype, html or body tags
     var tagAppearedArray = [];
-    htmlData = htmlData.replace(new RegExp("<(!doctype|html|body)[^>]*>", "ig"), function(fullMatch, cap1) {
+    /*htmlData = htmlData.replace(new RegExp("<(!doctype|html|body)[^>]*>", "ig"), function(fullMatch, cap1) {
         //console.log(fullMatch + " -> " + cap1);
 
         //If this is not the first tag of the type, remove it (return "")
@@ -221,7 +268,7 @@ function formatWebPage(htmlData, pageUrl) {
         //and do nothing with it (return the full match)
         tagAppearedArray.push(cap1);
         return fullMatch;
-    });
+    });*/
 
     //Remove every end html and body tags
     htmlData = htmlData.replace(new RegExp("</(html|body)[^>]*>", "ig"), "");
@@ -247,6 +294,9 @@ function formatWebPage(htmlData, pageUrl) {
 
     //Remove all meta tags
     $("meta").remove();
+
+    //Remove all iframes
+    $('iframe').remove();
 
     //Wrap any floating text to a <span> tag
     $("p, div").contents()
@@ -288,7 +338,7 @@ function formatWebPage(htmlData, pageUrl) {
     $("body").first()
         //.append('<script src="jquery-3.1.0.js"></script>')
         .append('<script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>')
-        .append('<script src="dataget_script.js"></script>')
+        .append('<script src="dataget_min.js"></script>')
         .append('<script>var targetPageUrl = "' + pageUrl + '";</script>');
 
     $("head").append('<link href="dataget_style.css" type=text/css rel=stylesheet>');
@@ -299,10 +349,15 @@ function formatWebPage(htmlData, pageUrl) {
 
 function addUrlsHost(pageData, urlPath) {
 
-    return pageData.replace(/(href|src)=("|\')([\S]+)("|\')/ig, 
+    var localPageData = pageData;
+
+    //url('/Content/images/bg.jpg');
+
+    localPageData = localPageData.replace(/(href|src)=("|\')([\S]+)("|\')/ig, 
         function(match, cap1, cap2, cap3, cap4, index, source) {
+
             //If the match has already a full url, do not modify
-            if(cap3.indexOf("http") == 0 || cap3.indexOf("//") == 0 || cap3.indexOf("#") == 0)
+            if(cap3.indexOf("http") == 0 || cap3.indexOf("//") == 0 || cap3.indexOf("#") == 0 || cap3.indexOf("data:") == 0)
                 return match; 
 
             //If the cap url do not have a bar in the front, add it
@@ -310,6 +365,29 @@ function addUrlsHost(pageData, urlPath) {
 
             return cap1 + '="' + urlPath + matchUrl + '"';
         });
+    
+    localPageData = localPageData.replace(new RegExp("url\\((\"|'|&apos;)([^)]*)(\"|'|&apos;)\\)", 'ig'), 
+        function(match, cap1, cap2, cap3, index, source) {
+            /*console.log("--BEGIN MATCH--");
+            console.log(match);
+            console.log(cap1);
+            console.log(cap2);
+            console.log(cap3);
+            console.log("--END MATCH--");*/
+
+            //If the match has already a full url, do not modify
+            if(cap2.indexOf("http") == 0 || cap2.indexOf("//") == 0 || cap2.indexOf("#") == 0 || cap2.indexOf("data:") == 0)
+                return match; 
+
+            //If the cap url do not have a bar in the front, add it
+            var matchUrl = cap2.indexOf("/") == 0 ? cap2 : "/" + cap2;
+
+            //return 'url("' + urlPath + matchUrl + '")';
+            return 'url(' + urlPath + matchUrl + ')';
+
+        });
+
+    return localPageData;
 }
 
 

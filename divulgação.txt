@@ -1,0 +1,15 @@
+Fala ai galera! Fiz um app pensando em algumas utilidades, inclusive no ramo de iot e embarcados. 
+
+É um sistema que você escolhe um site, depois seleciona os pedaços dele que você quer extrair e clica em DONE. 
+
+O site te gera um link que sempre que você acessar, ele vai retornar as partes que você escolheu. Uma das utilidades é na criação de dispositivos que reajam a qualquer informação que possa ser pega de algum site, como likes de uma página, views de um vídeo etc...
+
+O site é
+http://pagefrag.com
+
+Esse link por exemplo sempre que acessado retorna o horario de brasilia atual: http://pagefrag.com/h2dnajd6di
+
+ou esse link retorna o preço atual do bitcoin (pelo site bitvalor)
+http://pagefrag.com/0gv96eg4w5
+
+Ainda ta rustico, meio lento, com bugs, sem muitas opções, mas é só pra mostrar a idéia. 

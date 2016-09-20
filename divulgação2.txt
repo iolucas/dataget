@@ -1,0 +1,16 @@
+Fala ai galera!
+
+Criei um sistema de extração de dados de sites na internet pra serem usados inclusive com iot e embarcados.
+
+-Você abre http://pagefrag.com e escreve o endereço do site que você quer extrair os dados. 
+-Quando a página abrir, você clica nos dados desejados e quando terminar clica em DONE na parte superior direita.
+-O site te dará um link para você acessar essas informações de forma simples sempre que quiser.
+
+Isso pode ser usado para criar qualquer dispositivo que reaga com informações da web, como curtidas em uma página do facebook ou views em uma página do youtube. 
+
+Por exemplo: 
+http://pagefrag.com/53hi24x0qt esse link retornar o horário de brasília sempre que acessado.
+http://pagefrag.com/4joea3qhib esse link retorna o número de likes da página do arduino no Facebook
+
+Ainda ta rustico, meio lento, com bugs, sem muitas opções, mas é só pra mostrar a idéia. 
+
