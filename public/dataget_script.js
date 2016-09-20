@@ -4,7 +4,7 @@ desiredElementsInstructions = [];
 window.onload = function() {
 
     //Append nav menu to the page
-    $("body").append("<div class='dataget-nav-bar'><div class='dataget-nav-bar-title'>Dataget.co</div></div>");
+    $("body").append("<div class='dataget-nav-bar'><div class='dataget-nav-bar-title'>PageFrag</div></div>");
 
     //$(".dataget-nav-bar").append("<button onclick='DatagetCo.setPages();' class='dataget-nav-bar-element'>Done</div>");
     $(".dataget-nav-bar").append("<form action='setpage' method='post'><input type='hidden' value='" + targetPageUrl + "' name='pageUrl'/><input type='hidden' id='dataget-instructions' name='instructions'/><input type='submit' class='dataget-nav-bar-element' value ='Done'/></form>");

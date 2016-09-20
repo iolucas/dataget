@@ -1,15 +1,33 @@
 <!DOCTYPE html>
 
 <html>
-<head>
-    
+<head>  
+    <title>PageFrag</title>
+    <style>
+        body {
+            padding-top: 100px;
+        }
+        input {
+            font-size: 30px;
+        }
+        input[type=text] {
+            margin-top: 100px;
+            width: 70%;
+        }
+        input[type=submit] {
+            margin-top: 30px;
+            width: 100px;
+        }
+    </style>
 </head>
 <body>
-<h1>DATAGET.CO</h1>
-<form method="GET" action="getpage">
-    <input type="text" name="pageurl" placeholder="Type the url"/>
-    <input type="submit"/>        
-</form><br>
+    <center>
+        <h1>PAGE FRAG</h1>
+        <form method="GET" action="getpage">
+            <input type="text" name="pageurl" placeholder="Type the url you want"/><br>
+            <input type="submit" value="Go!"/>        
+        </form><br>
+    </center>
 
 </body>
 </html>

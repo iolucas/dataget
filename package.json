@@ -2,13 +2,21 @@
   "name": "dataget",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
   "scripts": {
+    "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "main": "app.js",
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.15.2"
+    "body-parser": "^1.15.2",
+    "cfenv": "^1.0.3",
+    "cheerio": "^0.22.0",
+    "express": "^4.14.0",
+    "phantom": "^2.1.21"
+  },
+  "engines": {
+    "node": "4.x"
   }
 }

@@ -1,15 +1,33 @@
+//Http server
 var express = require('express');
 var app = express();
 
+//Middleware to handle post data from express server
 var bodyParser = require('body-parser');
 
+//Modules to perform http requests
 var http = require("http");
 var https = require("https");
 
+//Extract url data
 var urlParser = require('url');
 
+//Jquery like html parser
 var cheerio = require('cheerio');
 
+var renderpage = require("./renderpage.js");
+
+// cfenv provides access to your Cloud Foundry environment
+// for more info, see: https://www.npmjs.com/package/cfenv
+var cfenv = require('cfenv');
+
+//Module to handle filesystem
+var fs = require("fs");
+
+// get the app environment from Cloud Foundry
+var appEnv = cfenv.getAppEnv();
+
+//Utils
 String.prototype.replaceAll = function(search, replacement) {
     var target = this;
     return target.replace(new RegExp(search, 'g'), replacement);
@@ -22,7 +40,8 @@ var storedPages = [];
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
-app.use(express.static('public'));
+app.use(express.static(__dirname + '/public'));
+
 
 //Must resolve cases of the target page has been redirected
 app.get('/getpage', function (req, res) {
@@ -47,7 +66,10 @@ app.get('/getpage', function (req, res) {
 
 app.get("/:pageId", function(req, res) {
 
-    var pageData = storedPages[parseInt(req.params.pageId)];
+    var pageData = storedPages[req.params.pageId];
+
+    //var pageFormat = req.query.format || "text";
+    //console.log(pageFormat);
 
     if(pageData) {
         
@@ -71,27 +93,56 @@ app.get("/:pageId", function(req, res) {
     }    
 });
 
+function randomString(length, chars) {
+    var result = '';
+    for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
+    return result;
+}
+//var rString = randomString(7, '0123456789abcdefghijklmnopqrstuvwxyz');
+
 app.post('/setpage', function(req, res) {
-    storedPages.push(req.body);
-    var pageNum = storedPages.length - 1;
-    res.send("Done. Page number: " + pageNum);
+    var newPageId = randomString(10, '0123456789abcdefghijklmnopqrstuvwxyz');
+
+    //TODO: Must filter data received on post
+    storedPages[newPageId] = req.body;
+
+    //var pageNum = storedPages.length - 1;
+
+    var setPageHtml = fs.readFileSync("public/setpage.html", 'utf8');
+
+    //Replace with address
+    setPageHtml = setPageHtml.replace(new RegExp("<!-- NEW-PAGE-ADDRESS -->", "g"), newPageId);
+
+    res.send(setPageHtml);
+
+    //res.send("Done. Page number: " + pageNum);
 });
 
-app.listen(3000, function () {
-  console.log('Example app listening on port 3000!');
+// start server on the specified port and binding host
+app.listen(appEnv.port, '0.0.0.0', function() {
+  // print a message when the server starts listening
+  console.log("server starting on " + appEnv.url);
 });
+
 
 
 function getPageAndFormat(pageUrl, callback) {
-    httpGet(pageUrl, function(error, htmlData) {
+
+    renderpage.render(pageUrl, function(error, htmlData) {
+        
+        //console.log(htmlData.indexOf("\n"));
+        //htmlData.replace(/\\n/ig, "");
+        callback(formatWebPage(htmlData, pageUrl));
+    });
+    /*httpGet(pageUrl, function(error, htmlData) {
         
         //console.log(htmlData.indexOf("\n"));
         //htmlData.replace(/\\n/ig, "");
         callback(formatWebPage(htmlData, pageUrl))
-    });
+    });*/
 }
 
-function getValueByInstruction(instruction, $) {
+function getValueByInstruction(instruction, $, format) {
 
     //if(htmlData)
         //var $ = cheerio.load(htmlData);
@@ -138,8 +189,16 @@ function getValueByInstruction(instruction, $) {
     console.log(parentElement.prop("tagName"));
     console.log(parentElement.text().substr(0,30));
 
-    //Get the text of the last parent element
-    return parentElement.text();
+    //Get the content of the last parent element according to the specified format
+    format = format || "";
+    switch(format) {
+        case "html":
+            return parentElement.html();
+        
+        default:
+            return parentElement.text();
+    }
+    //return parentElement.text();
 }
 
 
@@ -149,26 +208,29 @@ function formatWebPage(htmlData, pageUrl) {
 
     //Do this first part to ensure the document is in the right html format
 
-    //Remove every html tag from the page to ensure there is only one html tag
-    htmlData = htmlData.replace(new RegExp("<html>", "ig"), "");
-    htmlData = htmlData.replace(new RegExp("</html>", "ig"), "");
-    //Remove end body tags too
-    htmlData = htmlData.replace(new RegExp("</body>", "ig"), "");
+    //Remove any additional !doctype, html or body tags
+    var tagAppearedArray = [];
+    htmlData = htmlData.replace(new RegExp("<(!doctype|html|body)[^>]*>", "ig"), function(fullMatch, cap1) {
+        //console.log(fullMatch + " -> " + cap1);
 
-    htmlData = "<!DOCTYPE html><html>" + htmlData + "</body></html>";
-
-    //Remove all line skip special chars
-    htmlData = htmlData.replace(new RegExp("\n|\r|\t", "ig"), "");
-
-    //Keep only the first <body>, replace the rest with ""
-    var notFirstBodyFlag = false;
-    htmlData = htmlData.replace(/<body>/ig, function(match, index) {
-        if(notFirstBodyFlag)
+        //If this is not the first tag of the type, remove it (return "")
+        if(tagAppearedArray.indexOf(cap1) != -1)
             return "";
         
-        notFirstBodyFlag = true;
-        return "<body>";
+        //If the tag has not appeared before, add it o the tag appeared array 
+        //and do nothing with it (return the full match)
+        tagAppearedArray.push(cap1);
+        return fullMatch;
     });
+
+    //Remove every end html and body tags
+    htmlData = htmlData.replace(new RegExp("</(html|body)[^>]*>", "ig"), "");
+
+    //Append end body and html tags to the end of the document
+    htmlData += "</body></html>";
+
+    //Remove all line skip special chars
+    //htmlData = htmlData.replace(new RegExp("\n|\r|\t", "ig"), "");
 
     //Get url data such as host, path etc
     var urlData = urlParser.parse(pageUrl);
@@ -180,9 +242,11 @@ function formatWebPage(htmlData, pageUrl) {
     var $ = cheerio.load(htmlData);
 
     
-
     //Remove all scripts
     $("script").remove();
+
+    //Remove all meta tags
+    $("meta").remove();
 
     //Wrap any floating text to a <span> tag
     $("p, div").contents()
@@ -199,7 +263,7 @@ function formatWebPage(htmlData, pageUrl) {
     }));//[0].nodeValue = "The text you want to replace with" 
 */
 
-    //Add selectable to every class
+    //Add selectable to every selectable class
     $("*").addClass('dataget-selectable');
 
     //Remove the class from the undesired elements
@@ -222,7 +286,8 @@ function formatWebPage(htmlData, pageUrl) {
     $("body").removeClass('dataget-selectable');
 
     $("body").first()
-        .append('<script src="jquery-3.1.0.js"></script>')
+        //.append('<script src="jquery-3.1.0.js"></script>')
+        .append('<script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>')
         .append('<script src="dataget_script.js"></script>')
         .append('<script>var targetPageUrl = "' + pageUrl + '";</script>');
 
