@@ -1,6 +1,6 @@
 Fala ai galera!
 
-Criei um sistema de extração de dados de sites na internet pra serem usados inclusive com iot e embarcados.
+Criei um sistema de extração de dados de sites na internet pra serem usados com iot e embarcados.
 
 -Você abre http://pagefrag.com e escreve o endereço do site que você quer extrair os dados. 
 -Quando a página abrir, você clica nos dados desejados e quando terminar clica em DONE na parte superior direita.

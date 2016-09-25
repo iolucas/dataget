@@ -44,6 +44,12 @@ app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x
 
 app.use(express.static(__dirname + '/public'));
 
+app.get('/listAllDocuments', function (req, res) {
+    dbconnection.listAll(function(err, results) {
+        //console.log(results);
+        res.send(JSON.stringify(results, null, "<br>"));
+    });
+});
 
 //Must resolve cases of the target page has been redirected
 app.get('/getpage', function (req, res) {
@@ -86,6 +92,10 @@ app.get("/:pageId", function(req, res) {
             res.status(404).send('Page Not found');
             return;
         }
+
+        if(pageData.instructions == "")
+            return res.json([]);
+
         //console.log(req.params.pageId);
         //console.log(arguments);
 
@@ -118,6 +128,10 @@ function randomString(length, chars) {
 //var rString = randomString(7, '0123456789abcdefghijklmnopqrstuvwxyz');
 
 app.post('/setpage', function(req, res) {
+    if(req.body.instructions == "")
+        return res.send("You haven't selected any fragment of the webpage!");
+
+
     var newPageId = randomString(10, '0123456789abcdefghijklmnopqrstuvwxyz');
 
     dbconnection.insert({

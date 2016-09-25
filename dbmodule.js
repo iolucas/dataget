@@ -1,4 +1,5 @@
 var MongoClient = require('mongodb').MongoClient;
+var moment = require("moment-timezone");
 
 // Connection url
 var url = 'mongodb://localhost:27017/test';
@@ -20,6 +21,8 @@ module.exports = {
     },
 
     insert: function(data, callback) {
+        data.createdOn = moment().tz("America/Sao_Paulo").format('llll');
+
         collectionRef.insertOne(data, null, function(err, result) {
             callback(err);
         });
@@ -28,6 +31,12 @@ module.exports = {
     get: function(urlPath, callback) {
         collectionRef.findOne({path: urlPath},function(err, result) {
             callback(err, result);
+        });
+    },
+
+    listAll: function(callback) {
+        collectionRef.find({}).toArray(function(err, results) {
+            callback(err, results);
         });
     }
 }

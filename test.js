@@ -28,8 +28,9 @@ MongoClient.connect(url, function(err, db) {
 
     });
 });*/
-
-var testString = 'background-image:url("/Content/images/bg.jpg");)';
+var moment = require("moment-timezone");
+console.log(moment().tz("America/Sao_Paulo").format('llll'));
+/*var testString = 'background-image:url("/Content/images/bg.jpg");)';
 
 testString = testString.replace(new RegExp("url\\((\"|'|&apos;)([^)]*)(\"|'|&apos;)\\)", 'ig'), 
     function(match, cap1, cap2, cap3, index, source) {
@@ -37,7 +38,7 @@ testString = testString.replace(new RegExp("url\\((\"|'|&apos;)([^)]*)(\"|'|&apo
         console.log(cap2);
         console.log(cap3)
         console.log(match);
-        return match;*/
+        return match;
 
         urlPath = "http://example.com";
 
@@ -51,4 +52,4 @@ testString = testString.replace(new RegExp("url\\((\"|'|&apos;)([^)]*)(\"|'|&apo
         return 'url("' + urlPath + matchUrl + '")';
     });
 
-console.log(testString);
+console.log(testString);*/
